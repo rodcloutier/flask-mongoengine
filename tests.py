@@ -197,6 +197,33 @@ class WTFormsAppTestCase(unittest.TestCase):
         self.assertEqual(True, form.dogs.widget.multiple)
 
 
+    def test_modelselectfield_multiple_selected_elements_must_be_retained(self):
+
+        db = self.db
+
+        class Dog(db.Document):
+            name = db.StringField()
+            def __unicode__(self):
+                return self.name
+
+        class DogOwner(db.Document):
+            dogs = db.ListField(db.ReferenceField(Dog))
+
+        DogOwnerForm = model_form(DogOwner)
+
+        dogs = [Dog(name="fido"), Dog(name="rex")]
+        for dog in dogs:
+            dog.save()
+
+        dogOwner = DogOwner(dogs=dogs[:1])
+        form = DogOwnerForm(obj=dogOwner)
+        html = form.dogs()
+        import re
+        m = re.search("<option selected=.+?>(.*?)</option>", html)
+        self.assertIsNotNone(m, "Should have one selected option")
+        self.assertEqual( "fido", m.group(1))
+
+
     def test_passwordfield(self):
         db = self.db
         class User(db.Document):

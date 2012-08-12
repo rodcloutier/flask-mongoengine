@@ -50,7 +50,10 @@ class QuerySetSelectField(SelectFieldBase):
         self.queryset.rewind()
         for obj in self.queryset:
             label = self.label_attr and getattr(obj, self.label_attr) or obj
-            yield (obj.id, label, obj == self.data)
+            yield (obj.id, label, self._selected(obj))
+
+    def _selected(self, obj):
+        return obj == self.data
 
     def process_formdata(self, valuelist):
         if valuelist:
@@ -81,6 +84,9 @@ class QuerySetSelectMultipleField(QuerySetSelectField):
     def  __init__(self, label=u'', validators=None, queryset=None, label_attr='',
                   allow_blank=False, blank_text=u'---', **kwargs):
         super(QuerySetSelectMultipleField, self).__init__(label, validators, queryset, label_attr, allow_blank, blank_text, **kwargs)
+
+    def _selected(self, obj):
+        return obj in self.data
 
     def process_formdata(self, valuelist):
         if valuelist:
