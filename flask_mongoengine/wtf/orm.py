@@ -141,12 +141,15 @@ class ModelConverter():
         if field.field.choices:
             kwargs['multiple'] = True
             return self.convert(model, field.field, kwargs)
-        unbound_field = self.convert(model, field.field, {})
+        # List of EmbeddedDocumentField must be able to pass the EmbeddedDocument field args which
+        # is done through a dict entry 'field_args'
+        unbound_field = self.convert(model, field.field, kwargs.get('field_args', {}))
         kwargs = {
             'validators': [],
             'filters': [],
+            'min_entries': kwargs.get('min_entries',0)
         }
-        return f.FieldList(unbound_field, min_entries=0, **kwargs)
+        return f.FieldList(unbound_field, **kwargs)
 
     @converts('SortedListField')
     def conv_SortedList(self, model, field, kwargs):
@@ -164,11 +167,11 @@ class ModelConverter():
 
     @converts('EmbeddedDocumentField')
     def conv_EmbeddedDocument(self, model, field, kwargs):
+        form_class = model_form(field.document_type_obj, field_args=kwargs)
         kwargs = {
             'validators': [],
             'filters': [],
         }
-        form_class = model_form(field.document_type_obj, field_args={})
         return f.FormField(form_class, **kwargs)
 
     @converts('ReferenceField')
